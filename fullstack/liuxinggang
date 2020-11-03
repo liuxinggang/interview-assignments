@@ -1,0 +1,78 @@
+Typescript 实现短域名服务（细节可以百度/谷歌）
+撰写两个API接口
+•	短域名存储接口：接受长域名信息，返回短域名信息
+•	短域名读取接口：接受短域名信息，返回长域名信息。
+限制：
+•	短域名长度最大为8个字符
+递交作业内容
+1.	源代码
+2.	单元测试代码以及单元测试覆盖率
+3.	API集成测试案例以及测试结果
+4.	简单的框架设计图，以及所有做的假设
+5.	涉及的SQL或者NoSQL的Schema，注意标注出Primary key 和Index 如果有。
+
+
+用JAVA实现
+实现思路：
+短链接的主要职责就是把原始链接很长的地址压缩成只有小于8个字母的短链接地址，当我们点击这小于8 个字母的链接后，我们又可以跳转到原始链接地址。
+我们可以将a-zA-Z0-9 这62位取6位组合，产生62^6=568亿个组合，把数字和字符组合做一定的映射，就可以生成一个字符串，再把原字符串打乱后保存，那么对应位置的组合字符串就会是无序的组合。把长域名存于，数据库表唯一ID，短字符串存于数据库表，返回ID。之后就可以利用ID从表里查到对应短字符串，根据短字符串和ID反查长域名实现跳转。
+参考代码：
+
+
+
+
+
+public class ShortUrlGenerator {
+ 
+    /**
+      * @param args
+      */
+    public static void main(String[] args) {
+       // 长连接： http://tech.sina.com.cn/i/2011-03-23/11285321288.shtml
+       String sLongUrl = "http://tech.sina.com.cn/i/2011-03-23/11285321288.shtml" ; // 3BD768E58042156E54626860E241E999
+       String aResult = shortUrl (sLongUrl);
+       // 打印出结果
+           System. out .println( aResult);
+       
+    }
+ 
+    public static String shortUrl(String url) {
+       // 可以自定义生成 MD5 加密字符传前的混合 KEY
+       String key = "wuguowei" ;
+       // 要使用生成 URL 的字符
+       String[] chars = new String[] { "a" , "b" , "c" , "d" , "e" , "f" , "g" , "h" ,
+              "i" , "j" , "k" , "l" , "m" , "n" , "o" , "p" , "q" , "r" , "s" , "t" ,
+              "u" , "v" , "w" , "x" , "y" , "z" , "0" , "1" , "2" , "3" , "4" , "5" ,
+              "6" , "7" , "8" , "9" , "A" , "B" , "C" , "D" , "E" , "F" , "G" , "H" ,
+              "I" , "J" , "K" , "L" , "M" , "N" , "O" , "P" , "Q" , "R" , "S" , "T" ,
+              "U" , "V" , "W" , "X" , "Y" , "Z"
+ 
+       };
+       // 对传入网址进行 MD5 加密
+       String sMD5EncryptResult = ( new CMyEncrypt()).getMD5OfStr(key + url);
+       String hex = sMD5EncryptResult;
+ 
+       String resUrl = “”;
+ 
+           // 把加密字符按照 8 位一组 16 进制与 0x3FFFFFFF 进行位与运算
+           String sTempSubString = hex.substring(i * 8, i * 8 + 8);
+ 
+           // 这里需要使用 long 型来转换，因为 Inteper .parseInt() 只能处理 31 位 , 首位为符号位 , 如果不用 long ，则会越界
+           long lHexLong = 0x3FFFFFFF & Long.parseLong (sTempSubString, 16);
+           String outChars = "" ;
+           for ( int j = 0; j < 6; j++) {
+              // 把得到的值与 0x0000003D 进行位与运算，取得字符数组 chars 索引
+              long index = 0x0000003D & lHexLong;
+              // 把取得的字符相加
+              outChars += chars[( int ) index];
+              // 每次循环按位右移 5 位
+              lHexLong = lHexLong >> 5;
+           }
+           // 把字符串存入对应索引的输出数组
+           resUrl = outChars;
+       
+       return resUrl;
+    }
+}
+测试的例子就是main函数的例子，生成的短链接字符串：7nUFJn
+
